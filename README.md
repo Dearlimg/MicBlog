@@ -294,4 +294,21 @@ Blog-v1.0.0/
 4. **团队协作**: 不同团队可以独立负责不同的服务
 5. **水平扩展**: 可以根据需要独立扩展特定服务
 
+### 📚 更多文档
+
+- [项目结构说明](PROJECT_STRUCTURE.md) - 详细的目录结构
+- [Nginx+Redis架构](nginx-redis-architecture.md) - 使用Nginx作为反向代理的架构说明
+
+### 🔧 部署方式
+
+#### 方式1：Docker Compose（推荐）
+```bash
+./start-microservices.sh
+```
+
+#### 方式2：Nginx + Redis（本地开发）
+```bash
+./start-with-nginx.sh
+```
+
 www.durlim.xyz
