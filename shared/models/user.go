@@ -60,10 +60,13 @@ type Transaction struct {
 	ID          uint      `json:"id" gorm:"primaryKey;autoIncrement"`
 	UserID      uint      `json:"user_id" gorm:"not null;index"`
 	WalletID    uint      `json:"wallet_id" gorm:"not null;index"`
-	Type        string    `json:"type" gorm:"size:20;not null"` // "income", "expense"
+	Type        string    `json:"type" gorm:"size:20;not null"` // "income", "expense", "purchase", "refund", "transfer_out", "transfer_in"
 	Amount      float64   `json:"amount" gorm:"not null"`
 	Description string    `json:"description" gorm:"size:255"`
-	Status      string    `json:"status" gorm:"size:20;default:'pending'"` // "pending", "completed", "failed"
+	ProductID   *uint     `json:"product_id" gorm:"index"`                 // 商品ID（可选，用于商城模块）
+	OrderID     *uint     `json:"order_id" gorm:"index"`                   // 订单ID（可选，用于订单关联）
+	Quantity    int       `json:"quantity" gorm:"default:1"`               // 商品数量
+	Status      string    `json:"status" gorm:"size:20;default:'pending'"` // "pending", "completed", "failed", "refunded"
 	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }
@@ -73,6 +76,20 @@ type PaymentRequest struct {
 	UserID      uint    `json:"user_id" validate:"required"`
 	Amount      float64 `json:"amount" validate:"required,gt=0"`
 	Description string  `json:"description" validate:"required"`
+}
+
+// ProductPurchaseRequest 商品购买请求
+type ProductPurchaseRequest struct {
+	UserID    uint  `json:"user_id" validate:"required"`
+	ProductID uint  `json:"product_id" validate:"required"`
+	Quantity  int   `json:"quantity" validate:"required,gt=0"`
+	OrderID   *uint `json:"order_id"` // 可选，如果有订单ID则关联
+}
+
+// RefundRequest 退款请求
+type RefundRequest struct {
+	TransactionID uint   `json:"transaction_id" validate:"required"`
+	Reason        string `json:"reason" validate:"required"`
 }
 
 // Comment 评论模型
@@ -132,6 +149,9 @@ type PaymentEvent struct {
 	Amount        float64 `json:"amount"`
 	Description   string  `json:"description"`
 	TransactionID uint    `json:"transaction_id"`
+	ProductID     *uint   `json:"product_id,omitempty"` // 商品ID（可选）
+	OrderID       *uint   `json:"order_id,omitempty"`   // 订单ID（可选）
+	Quantity      int     `json:"quantity,omitempty"`   // 商品数量
 }
 
 // CommentEvent 评论事件
