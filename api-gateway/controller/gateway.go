@@ -43,6 +43,8 @@ func (gc *GatewayController) ProxyRequest(c *gin.Context) {
 		targetURL = "http://" + gc.config.Services.WalletService.Host + ":" + gc.config.Services.WalletService.Port + "/api/v1" + targetPath
 	case "comments":
 		targetURL = "http://" + gc.config.Services.CommentService.Host + ":" + gc.config.Services.CommentService.Port + "/api/v1" + targetPath
+	case "products", "orders", "shop":
+		targetURL = "http://" + gc.config.Services.ShopService.Host + ":" + gc.config.Services.ShopService.Port + "/api/v1" + targetPath
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown service"})
 		return
@@ -104,6 +106,7 @@ func (gc *GatewayController) HealthCheck(c *gin.Context) {
 		"user-service":    "http://" + gc.config.Services.UserService.Host + ":" + gc.config.Services.UserService.Port + "/health",
 		"wallet-service":  "http://" + gc.config.Services.WalletService.Host + ":" + gc.config.Services.WalletService.Port + "/health",
 		"comment-service": "http://" + gc.config.Services.CommentService.Host + ":" + gc.config.Services.CommentService.Port + "/health",
+		"shop-service":    "http://" + gc.config.Services.ShopService.Host + ":" + gc.config.Services.ShopService.Port + "/api/v1/health",
 	}
 
 	status := make(map[string]string)

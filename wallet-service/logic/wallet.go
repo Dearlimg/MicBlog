@@ -219,3 +219,180 @@ func (wl *WalletLogic) Transfer(fromUserID, toUserID uint, amount float64, descr
 
 	return nil
 }
+
+// PurchaseProduct 购买商品（为商城模块准备）
+func (wl *WalletLogic) PurchaseProduct(userID uint, productID uint, quantity int, unitPrice float64, orderID *uint) (*models.Transaction, error) {
+	if quantity <= 0 {
+		return nil, fmt.Errorf("quantity must be greater than 0")
+	}
+	if unitPrice <= 0 {
+		return nil, fmt.Errorf("unit price must be greater than 0")
+	}
+
+	totalAmount := float64(quantity) * unitPrice
+
+	// 获取钱包
+	wallet, err := wl.GetWallet(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet: %v", err)
+	}
+
+	// 检查余额是否足够
+	if wallet.Balance < totalAmount {
+		return nil, fmt.Errorf("insufficient balance: need %.2f, have %.2f", totalAmount, wallet.Balance)
+	}
+
+	// 创建交易记录
+	transaction := &models.Transaction{
+		UserID:      userID,
+		WalletID:    wallet.ID,
+		Type:        "purchase",
+		Amount:      totalAmount,
+		Description: fmt.Sprintf("Purchase product %d, quantity: %d", productID, quantity),
+		ProductID:   &productID,
+		OrderID:     orderID,
+		Quantity:    quantity,
+		Status:      "pending",
+	}
+
+	err = wl.transactionRepo.CreateTransaction(transaction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %v", err)
+	}
+
+	// 扣除余额
+	wallet.Balance -= totalAmount
+	err = wl.walletRepo.UpdateWallet(wallet)
+	if err != nil {
+		// 回滚交易状态
+		transaction.Status = "failed"
+		wl.transactionRepo.UpdateTransaction(transaction)
+		return nil, fmt.Errorf("failed to deduct balance: %v", err)
+	}
+
+	// 更新交易状态
+	transaction.Status = "completed"
+	err = wl.transactionRepo.UpdateTransaction(transaction)
+	if err != nil {
+		log.Printf("Failed to update transaction status: %v", err)
+	}
+
+	// 发送Kafka事件
+	event := &models.PaymentEvent{
+		UserID:        userID,
+		Amount:        -totalAmount, // 负数表示支出
+		Description:   transaction.Description,
+		TransactionID: transaction.ID,
+		ProductID:     &productID,
+		OrderID:       orderID,
+		Quantity:      quantity,
+	}
+	err = wl.producer.SendMessage(kafka.TopicWalletPayment, fmt.Sprintf("%d", transaction.ID), event)
+	if err != nil {
+		log.Printf("Failed to send payment event: %v", err)
+	}
+
+	return transaction, nil
+}
+
+// Refund 退款（为商城模块准备）
+func (wl *WalletLogic) Refund(transactionID uint, reason string) (*models.Transaction, error) {
+	// 获取原始交易记录
+	originalTransaction, err := wl.transactionRepo.GetTransactionByID(transactionID)
+	if err != nil {
+		return nil, fmt.Errorf("transaction not found: %v", err)
+	}
+
+	// 检查是否已经退款过
+	if originalTransaction.Status == "refunded" {
+		return nil, fmt.Errorf("transaction already refunded")
+	}
+
+	// 只允许退款购买类型的交易
+	if originalTransaction.Type != "purchase" {
+		return nil, fmt.Errorf("only purchase transactions can be refunded")
+	}
+
+	// 获取钱包
+	wallet, err := wl.GetWallet(originalTransaction.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet: %v", err)
+	}
+
+	// 创建退款交易记录
+	refundTransaction := &models.Transaction{
+		UserID:      originalTransaction.UserID,
+		WalletID:    originalTransaction.WalletID,
+		Type:        "refund",
+		Amount:      originalTransaction.Amount, // 退款金额等于原交易金额
+		Description: fmt.Sprintf("Refund for transaction %d: %s", transactionID, reason),
+		ProductID:   originalTransaction.ProductID, // 关联原商品
+		OrderID:     originalTransaction.OrderID,   // 关联原订单
+		Quantity:    originalTransaction.Quantity,
+		Status:      "pending",
+	}
+
+	err = wl.transactionRepo.CreateTransaction(refundTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create refund transaction: %v", err)
+	}
+
+	// 退回余额
+	wallet.Balance += originalTransaction.Amount
+	err = wl.walletRepo.UpdateWallet(wallet)
+	if err != nil {
+		// 回滚退款交易状态
+		refundTransaction.Status = "failed"
+		wl.transactionRepo.UpdateTransaction(refundTransaction)
+		return nil, fmt.Errorf("failed to refund balance: %v", err)
+	}
+
+	// 更新退款交易状态
+	refundTransaction.Status = "completed"
+	err = wl.transactionRepo.UpdateTransaction(refundTransaction)
+	if err != nil {
+		log.Printf("Failed to update refund transaction status: %v", err)
+	}
+
+	// 更新原交易状态为已退款
+	originalTransaction.Status = "refunded"
+	err = wl.transactionRepo.UpdateTransaction(originalTransaction)
+	if err != nil {
+		log.Printf("Failed to update original transaction status: %v", err)
+	}
+
+	// 发送Kafka退款事件
+	event := &models.PaymentEvent{
+		UserID:        originalTransaction.UserID,
+		Amount:        originalTransaction.Amount, // 正数表示退款收入
+		Description:   refundTransaction.Description,
+		TransactionID: refundTransaction.ID,
+		ProductID:     originalTransaction.ProductID,
+		OrderID:       originalTransaction.OrderID,
+		Quantity:      originalTransaction.Quantity,
+	}
+	err = wl.producer.SendMessage(kafka.TopicWalletPayment, fmt.Sprintf("refund-%d", refundTransaction.ID), event)
+	if err != nil {
+		log.Printf("Failed to send refund event: %v", err)
+	}
+
+	return refundTransaction, nil
+}
+
+// GetTransactionsByProductID 根据商品ID获取交易记录（为商城模块准备）
+func (wl *WalletLogic) GetTransactionsByProductID(productID uint) ([]*models.Transaction, error) {
+	// 这里需要在repository中添加查询方法
+	// 暂时返回所有交易，由调用方过滤
+	allTransactions, err := wl.transactionRepo.GetTransactionsByUserID(0) // 0表示获取所有
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*models.Transaction
+	for _, t := range allTransactions {
+		if t.ProductID != nil && *t.ProductID == productID {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}

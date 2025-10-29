@@ -23,6 +23,7 @@ type ServicesConfig struct {
 	UserService    ServiceConfig `json:"user_service"`
 	WalletService  ServiceConfig `json:"wallet_service"`
 	CommentService ServiceConfig `json:"comment_service"`
+	ShopService    ServiceConfig `json:"shop_service"`
 }
 
 // ServiceConfig 服务配置
@@ -88,6 +89,11 @@ func loadDefaultConfig() *Config {
 		commentHost = "comment-service"
 	}
 
+	shopHost := os.Getenv("SHOP_SERVICE_HOST")
+	if shopHost == "" {
+		shopHost = "shop-service"
+	}
+
 	return &Config{
 		Server: ServerConfig{
 			Port: port,
@@ -104,6 +110,10 @@ func loadDefaultConfig() *Config {
 			CommentService: ServiceConfig{
 				Host: commentHost,
 				Port: "8003",
+			},
+			ShopService: ServiceConfig{
+				Host: shopHost,
+				Port: "8004",
 			},
 		},
 	}

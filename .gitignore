@@ -1,0 +1,38 @@
+# 编译生成的可执行文件
+api-gateway
+config-init
+config-updater
+user-service
+wallet-service
+comment-service
+
+# 日志文件
+*.log
+logs/
+
+# 进程ID文件
+.service_pids
+
+# IDE配置
+.vscode/
+.idea/
+
+# 环境变量文件
+.env
+.env.local
+
+# 临时文件
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# 测试覆盖率
+coverage.txt
+coverage.html
+
+# Go工作空间
+go.work
+

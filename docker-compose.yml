@@ -76,6 +76,7 @@ services:
       - user-service
       - wallet-service
       - comment-service
+      - shop-service
     networks:
       - blog-network
 
@@ -124,6 +125,22 @@ services:
       - mysql
       - redis
       - kafka
+    networks:
+      - blog-network
+
+  # 商城服务
+  shop-service:
+    build:
+      context: .
+      dockerfile: ./shop-service/Dockerfile
+    container_name: blog-shop-service
+    ports:
+      - "8004:8004"
+    depends_on:
+      - config-init
+      - mysql
+      - redis
+      - wallet-service
     networks:
       - blog-network
 
