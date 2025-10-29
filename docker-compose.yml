@@ -52,15 +52,27 @@ services:
     networks:
       - blog-network
 
+  # 配置初始化服务
+  config-init:
+    build:
+      context: .
+      dockerfile: ./config-init/Dockerfile
+    container_name: blog-config-init
+    depends_on:
+      - redis
+    networks:
+      - blog-network
+
   # API网关
   api-gateway:
     build:
       context: .
-      dockerfile: services/api-gateway/Dockerfile
+      dockerfile: ./api-gateway/Dockerfile
     container_name: blog-api-gateway
     ports:
       - "8000:8000"
     depends_on:
+      - config-init
       - user-service
       - wallet-service
       - comment-service
@@ -71,11 +83,12 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: services/user-service/Dockerfile
+      dockerfile: ./user-service/Dockerfile
     container_name: blog-user-service
     ports:
       - "8001:8001"
     depends_on:
+      - config-init
       - mysql
       - redis
       - kafka
@@ -86,11 +99,12 @@ services:
   wallet-service:
     build:
       context: .
-      dockerfile: services/wallet-service/Dockerfile
+      dockerfile: ./wallet-service/Dockerfile
     container_name: blog-wallet-service
     ports:
       - "8002:8002"
     depends_on:
+      - config-init
       - mysql
       - redis
       - kafka
@@ -101,11 +115,12 @@ services:
   comment-service:
     build:
       context: .
-      dockerfile: services/comment-service/Dockerfile
+      dockerfile: ./comment-service/Dockerfile
     container_name: blog-comment-service
     ports:
       - "8003:8003"
     depends_on:
+      - config-init
       - mysql
       - redis
       - kafka
