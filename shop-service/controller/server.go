@@ -15,6 +15,11 @@ func NewServer(port string, productController *ProductController, orderControlle
 	router := gin.New()
 	router.Use(gin.Recovery(), gin.Logger())
 
+	// 健康检查路由
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "healthy", "service": "shop-service"})
+	})
+
 	// API路由
 	api := router.Group("/api/v1")
 	{
@@ -50,11 +55,6 @@ func NewServer(port string, productController *ProductController, orderControlle
 			cart.DELETE("/:product_id", cartController.RemoveFromCart)
 			cart.DELETE("", cartController.ClearCart)
 		}
-
-		// 健康检查
-		api.GET("/health", func(c *gin.Context) {
-			c.JSON(200, gin.H{"status": "healthy", "service": "shop-service"})
-		})
 	}
 
 	return &Server{

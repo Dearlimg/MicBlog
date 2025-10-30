@@ -15,6 +15,7 @@ type Config struct {
 	Redis    RedisConfig       `json:"redis"`
 	Kafka    KafkaConfig       `json:"kafka"`
 	Email    email.EmailConfig `json:"email"`
+	JWT      JWTConfig         `json:"jwt"`
 }
 
 // ServerConfig 服务器配置
@@ -37,6 +38,11 @@ type RedisConfig struct {
 // KafkaConfig Kafka配置
 type KafkaConfig struct {
 	Brokers []string `json:"brokers"`
+}
+
+// JWTConfig JWT配置
+type JWTConfig struct {
+	Secret string `json:"secret"`
 }
 
 // LoadConfig 从Redis配置中心加载配置
@@ -75,6 +81,10 @@ func LoadConfig() *Config {
 
 // loadDefaultConfig 加载默认配置
 func loadDefaultConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "sta_go_jwt_secret"
+	}
 	// 检查环境变量
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
@@ -124,7 +134,7 @@ func loadDefaultConfig() *Config {
 			DB:       0,
 		},
 		Kafka: KafkaConfig{
-			Brokers: []string{kafkaHost + ":" + kafkaPort},
+			Brokers: []string{}, // 本地开发时不使用Kafka
 		},
 		Email: email.EmailConfig{
 			Host:     "smtp.qq.com",
@@ -134,6 +144,9 @@ func loadDefaultConfig() *Config {
 			From:     "1492568061@qq.com",
 			To:       []string{"1492568061@qq.com"},
 			IsSSL:    true,
+		},
+		JWT: JWTConfig{
+			Secret: jwtSecret,
 		},
 	}
 }

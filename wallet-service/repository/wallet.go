@@ -212,13 +212,7 @@ func (r *walletRepository) SafeUpdateWalletBalance(userID uint, amount float64, 
 }
 
 // SafeTransfer 安全的转账（使用数据库事务）
-func (r *walletRepository) SafeTransfer(fromUserID, toUserID uint, amount float64, description string, tx *gorm.DB) error {
-	// 如果外部已经提供了事务，使用外部事务
-	if tx != nil {
-		return r.safeTransferInTx(tx, fromUserID, toUserID, amount, description)
-	}
-
-	// 否则创建新事务
+func (r *walletRepository) SafeTransfer(fromUserID, toUserID uint, amount float64, description string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		return r.safeTransferInTx(tx, fromUserID, toUserID, amount, description)
 	})

@@ -141,6 +141,14 @@ func (cc *CommentController) DeleteComment(c *gin.Context) {
 	rly.Reply(nil, "Comment deleted successfully")
 }
 
+// HealthCheck 健康检查
+func (cc *CommentController) HealthCheck(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status":  "healthy",
+		"service": "comment-service",
+	})
+}
+
 // Server HTTP服务器
 type Server struct {
 	router *gin.Engine
@@ -151,6 +159,9 @@ type Server struct {
 func NewServer(port string, commentController *CommentController) *Server {
 	router := gin.New()
 	router.Use(gin.Recovery(), gin.Logger())
+
+	// 健康检查路由
+	router.GET("/health", commentController.HealthCheck)
 
 	// 评论相关路由
 	api := router.Group("/api/v1")

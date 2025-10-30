@@ -164,6 +164,14 @@ func (wc *WalletController) Transfer(c *gin.Context) {
 	rly.Reply(nil, "Transfer completed successfully")
 }
 
+// HealthCheck 健康检查
+func (wc *WalletController) HealthCheck(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status":  "healthy",
+		"service": "wallet-service",
+	})
+}
+
 // Server HTTP服务器
 type Server struct {
 	router *gin.Engine
@@ -174,6 +182,9 @@ type Server struct {
 func NewServer(port string, walletController *WalletController) *Server {
 	router := gin.New()
 	router.Use(gin.Recovery(), gin.Logger())
+
+	// 健康检查路由
+	router.GET("/health", walletController.HealthCheck)
 
 	// 钱包相关路由
 	api := router.Group("/api/v1")
