@@ -1,6 +1,7 @@
 package email
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -85,7 +86,10 @@ func (es *EmailService) sendEmail(to, subject, body string) error {
 	addr := fmt.Sprintf("%s:%d", es.config.Host, es.config.Port)
 
 	if es.config.IsSSL {
-		err := e.SendWithTLS(addr, auth, nil)
+		// 使用TLS连接
+		err := e.SendWithTLS(addr, auth, &tls.Config{
+			ServerName: es.config.Host,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to send email with TLS: %v", err)
 		}

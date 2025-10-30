@@ -49,13 +49,16 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.userLogic.Login(&req)
+	user, token, err := uc.userLogic.Login(&req)
 	if err != nil {
 		rly.Reply(errcode.ErrServer.WithDetails(err.Error()))
 		return
 	}
 
-	rly.Reply(nil, user)
+	rly.Reply(nil, gin.H{
+		"user":  user,
+		"token": token,
+	})
 }
 
 // VerifyEmail 验证邮箱
@@ -123,6 +126,14 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	rly.Reply(nil, user)
 }
 
+// HealthCheck 健康检查
+func (uc *UserController) HealthCheck(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status":  "healthy",
+		"service": "user-service",
+	})
+}
+
 // Server HTTP服务器
 type Server struct {
 	router *gin.Engine
@@ -133,6 +144,9 @@ type Server struct {
 func NewServer(port string, userController *UserController) *Server {
 	router := gin.New()
 	router.Use(gin.Recovery(), gin.Logger())
+
+	// 健康检查路由
+	router.GET("/health", userController.HealthCheck)
 
 	// 用户相关路由
 	api := router.Group("/api/v1")
