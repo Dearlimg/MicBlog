@@ -5,6 +5,7 @@ import (
 	"blog/api-gateway/middleware"
 	"bytes"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -38,11 +39,11 @@ func (gc *GatewayController) ProxyRequest(c *gin.Context) {
 	var targetURL string
 	switch targetService {
 	case "users":
-		targetURL = "http://" + gc.config.Services.UserService.Host + ":" + gc.config.Services.UserService.Port + "/api/v1" + targetPath
+		targetURL = "http://" + gc.config.Services.UserService.Host + ":" + gc.config.Services.UserService.Port + "/api/v1/users" + targetPath
 	case "wallets":
-		targetURL = "http://" + gc.config.Services.WalletService.Host + ":" + gc.config.Services.WalletService.Port + "/api/v1" + targetPath
+		targetURL = "http://" + gc.config.Services.WalletService.Host + ":" + gc.config.Services.WalletService.Port + "/api/v1/wallets" + targetPath
 	case "comments":
-		targetURL = "http://" + gc.config.Services.CommentService.Host + ":" + gc.config.Services.CommentService.Port + "/api/v1" + targetPath
+		targetURL = "http://" + gc.config.Services.CommentService.Host + ":" + gc.config.Services.CommentService.Port + "/api/v1/comments" + targetPath
 	case "products", "orders", "shop":
 		targetURL = "http://" + gc.config.Services.ShopService.Host + ":" + gc.config.Services.ShopService.Port + "/api/v1" + targetPath
 	default:
@@ -74,6 +75,7 @@ func (gc *GatewayController) ProxyRequest(c *gin.Context) {
 	// 发送请求
 	resp, err := gc.client.Do(req)
 	if err != nil {
+		log.Printf("Failed to proxy request to %s: %v", targetURL, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to proxy request"})
 		return
 	}

@@ -53,7 +53,14 @@ func main() {
 		}
 	}()
 
-	log.Printf("Comment service started on port %s", cfg.Server.Port)
+	log.Printf("Comment service starting on port %s", cfg.Server.Port)
+
+	// 在goroutine中启动服务器
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Fatalf("Failed to start Comment service: %v", err)
+		}
+	}()
 
 	// 等待中断信号
 	quit := make(chan os.Signal, 1)

@@ -35,7 +35,7 @@ type ServiceConfig struct {
 // LoadConfig 从Redis配置中心加载配置
 func LoadConfig() *Config {
 	// 尝试从Redis配置中心加载
-	configCenter, err := config.NewConfigCenter("redis:6379", "sta_go", 0)
+	configCenter, err := config.NewConfigCenter("47.118.19.28:6379", "sta_go", 0)
 	if err != nil {
 		log.Printf("Failed to connect to Redis config center: %v, using default config", err)
 		return loadDefaultConfig()
@@ -76,22 +76,22 @@ func loadDefaultConfig() *Config {
 
 	userHost := os.Getenv("USER_SERVICE_HOST")
 	if userHost == "" {
-		userHost = "user-service"
+		userHost = "localhost"
 	}
 
 	walletHost := os.Getenv("WALLET_SERVICE_HOST")
 	if walletHost == "" {
-		walletHost = "wallet-service"
+		walletHost = "localhost"
 	}
 
 	commentHost := os.Getenv("COMMENT_SERVICE_HOST")
 	if commentHost == "" {
-		commentHost = "comment-service"
+		commentHost = "localhost"
 	}
 
 	shopHost := os.Getenv("SHOP_SERVICE_HOST")
 	if shopHost == "" {
-		shopHost = "shop-service"
+		shopHost = "localhost"
 	}
 
 	return &Config{

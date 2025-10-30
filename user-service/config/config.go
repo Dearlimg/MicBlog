@@ -124,7 +124,7 @@ func loadDefaultConfig() *Config {
 			DB:       0,
 		},
 		Kafka: KafkaConfig{
-			Brokers: []string{kafkaHost + ":" + kafkaPort},
+			Brokers: []string{}, // 本地开发时不使用Kafka
 		},
 		Email: email.EmailConfig{
 			Host:     "smtp.qq.com",

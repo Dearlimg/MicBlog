@@ -54,7 +54,14 @@ func main() {
 		}
 	}()
 
-	log.Printf("Wallet service started on port %s", cfg.Server.Port)
+	log.Printf("Wallet service starting on port %s", cfg.Server.Port)
+
+	// 在goroutine中启动服务器
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Fatalf("Failed to start Wallet service: %v", err)
+		}
+	}()
 
 	// 等待中断信号
 	quit := make(chan os.Signal, 1)

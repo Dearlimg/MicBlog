@@ -183,16 +183,20 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 		},
 		"services": map[string]interface{}{
 			"user_service": map[string]interface{}{
-				"host": "user-service",
+				"host": "localhost",
 				"port": "8001",
 			},
 			"wallet_service": map[string]interface{}{
-				"host": "wallet-service",
+				"host": "localhost",
 				"port": "8002",
 			},
 			"comment_service": map[string]interface{}{
-				"host": "comment-service",
+				"host": "localhost",
 				"port": "8003",
+			},
+			"shop_service": map[string]interface{}{
+				"host": "localhost",
+				"port": "8004",
 			},
 		},
 	}
