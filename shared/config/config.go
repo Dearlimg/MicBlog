@@ -211,7 +211,7 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 			"db":       0,
 		},
 		"kafka": map[string]interface{}{
-			"brokers": []string{"47.118.19.28:9092"},
+			"brokers": []string{"localhost:9092"},
 		},
 		"email": map[string]interface{}{
 			"host":     "smtp.qq.com",
@@ -238,7 +238,7 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 			"db":       0,
 		},
 		"kafka": map[string]interface{}{
-			"brokers": []string{"47.118.19.28:9092"},
+			"brokers": []string{"localhost:9092"},
 		},
 	}
 
@@ -256,7 +256,26 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 			"db":       0,
 		},
 		"kafka": map[string]interface{}{
-			"brokers": []string{"47.118.19.28:9092"},
+			"brokers": []string{"localhost:9092"},
+		},
+	}
+
+	// 商城服务配置
+	shopServiceConfig := map[string]interface{}{
+		"server": map[string]interface{}{
+			"port": "8004",
+		},
+		"database": map[string]interface{}{
+			"dsn": "root:sta_go@tcp(47.118.19.28:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local",
+		},
+		"redis": map[string]interface{}{
+			"addr":     "47.118.19.28:6379",
+			"password": "sta_go",
+			"db":       0,
+		},
+		"wallet": map[string]interface{}{
+			"host": "wallet-service",
+			"port": "8002",
 		},
 	}
 
@@ -266,6 +285,7 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 		"user-service":    userServiceConfig,
 		"wallet-service":  walletServiceConfig,
 		"comment-service": commentServiceConfig,
+		"shop-service":    shopServiceConfig,
 	}
 
 	for service, config := range configs {
