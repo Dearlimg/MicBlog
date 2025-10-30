@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,16 +22,18 @@ type UserLogic struct {
 	emailRepo repository.EmailRepository
 	producer  *kafka.Producer
 	emailSvc  *email.EmailService
+	jwtSecret string
 }
 
 // NewUserLogic 创建用户业务逻辑
-func NewUserLogic(userRepo repository.UserRepository, emailRepo repository.EmailRepository, producer *kafka.Producer, emailConfig email.EmailConfig) *UserLogic {
+func NewUserLogic(userRepo repository.UserRepository, emailRepo repository.EmailRepository, producer *kafka.Producer, emailConfig email.EmailConfig, jwtSecret string) *UserLogic {
 	emailSvc := email.NewEmailService(&emailConfig)
 	return &UserLogic{
 		userRepo:  userRepo,
 		emailRepo: emailRepo,
 		producer:  producer,
 		emailSvc:  emailSvc,
+		jwtSecret: jwtSecret,
 	}
 }
 
@@ -96,17 +99,17 @@ func (ul *UserLogic) Register(req *models.UserRegisterRequest) (*models.UserResp
 }
 
 // Login 用户登录
-func (ul *UserLogic) Login(req *models.UserLoginRequest) (*models.UserResponse, error) {
+func (ul *UserLogic) Login(req *models.UserLoginRequest) (*models.UserResponse, string, error) {
 	// 获取用户
 	user, err := ul.userRepo.GetUserByEmail(req.Email)
 	if err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, "", fmt.Errorf("invalid email or password")
 	}
 
 	// 验证密码
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, "", fmt.Errorf("invalid email or password")
 	}
 
 	// 发送Kafka事件
@@ -119,13 +122,37 @@ func (ul *UserLogic) Login(req *models.UserLoginRequest) (*models.UserResponse, 
 		log.Printf("Failed to send user login event: %v", err)
 	}
 
+	// 生成JWT Token（HS256）
+	token, err := ul.generateJWTToken(user.ID, user.Email)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate token: %v", err)
+	}
+
 	return &models.UserResponse{
 		ID:         user.ID,
 		Username:   user.Username,
 		Email:      user.Email,
 		IsVerified: user.IsVerified,
 		CreatedAt:  user.CreatedAt.Format(time.RFC3339),
-	}, nil
+	}, token, nil
+}
+
+// generateJWTToken 生成JWT Token
+func (ul *UserLogic) generateJWTToken(userID uint, email string) (string, error) {
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"sub":   userID,
+		"email": email,
+		"iat":   now.Unix(),
+		"exp":   now.Add(24 * time.Hour).Unix(),
+		"iss":   "micblog",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(ul.jwtSecret))
+	if err != nil {
+		return "", err
+	}
+	return signed, nil
 }
 
 // VerifyEmail 验证邮箱

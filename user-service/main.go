@@ -50,7 +50,7 @@ func main() {
 	emailRepo := repository.NewEmailRepository(redisClient)
 
 	// 初始化业务逻辑
-	userLogic := logic.NewUserLogic(userRepo, emailRepo, producer, cfg.Email)
+	userLogic := logic.NewUserLogic(userRepo, emailRepo, producer, cfg.Email, cfg.JWT.Secret)
 
 	// 初始化控制器
 	userController := controller.NewUserController(userLogic)

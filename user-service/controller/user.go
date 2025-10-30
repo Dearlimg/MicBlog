@@ -49,13 +49,16 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.userLogic.Login(&req)
+	user, token, err := uc.userLogic.Login(&req)
 	if err != nil {
 		rly.Reply(errcode.ErrServer.WithDetails(err.Error()))
 		return
 	}
 
-	rly.Reply(nil, user)
+	rly.Reply(nil, gin.H{
+		"user":  user,
+		"token": token,
+	})
 }
 
 // VerifyEmail 验证邮箱

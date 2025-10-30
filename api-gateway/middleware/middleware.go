@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // CorsMiddleware CORS中间件
@@ -39,11 +40,13 @@ func (c *CorsMiddleware) Handle() gin.HandlerFunc {
 }
 
 // AuthMiddleware 认证中间件
-type AuthMiddleware struct{}
+type AuthMiddleware struct {
+	secret string
+}
 
 // NewAuthMiddleware 创建认证中间件
-func NewAuthMiddleware() *AuthMiddleware {
-	return &AuthMiddleware{}
+func NewAuthMiddleware(secret string) *AuthMiddleware {
+	return &AuthMiddleware{secret: secret}
 }
 
 // Handle 认证处理
@@ -65,8 +68,25 @@ func (a *AuthMiddleware) Handle() gin.HandlerFunc {
 			}
 		}
 
-		// 这里可以添加JWT token验证逻辑
-		// 目前暂时跳过认证
+		// JWT 验证
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing or invalid token"})
+			return
+		}
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrTokenSignatureInvalid
+			}
+			return []byte(a.secret), nil
+		})
+		if err != nil || !token.Valid {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+
 		ctx.Next()
 	}
 }

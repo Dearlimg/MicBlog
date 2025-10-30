@@ -19,7 +19,7 @@ func main() {
 
 	// 初始化中间件
 	corsMiddleware := middleware.NewCorsMiddleware()
-	authMiddleware := middleware.NewAuthMiddleware()
+	authMiddleware := middleware.NewAuthMiddleware(cfg.JWT.Secret)
 
 	// 启动HTTP服务器
 	server := controller.NewServer(cfg.Server.Port, gatewayController, corsMiddleware, authMiddleware)

@@ -199,6 +199,9 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 				"port": "8004",
 			},
 		},
+		"jwt": map[string]interface{}{
+			"secret": "sta_go_jwt_secret",
+		},
 	}
 
 	// 用户服务配置
@@ -225,6 +228,9 @@ func (cc *ConfigCenter) InitializeDefaultConfigs() error {
 			"from":     "1492568061@qq.com",
 			"to":       []string{"1492568061@qq.com"},
 			"is_ssl":   true,
+		},
+		"jwt": map[string]interface{}{
+			"secret": "sta_go_jwt_secret",
 		},
 	}
 

@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Services ServicesConfig `json:"services"`
+	JWT      JWTConfig      `json:"jwt"`
 }
 
 // ServerConfig 服务器配置
@@ -30,6 +31,11 @@ type ServicesConfig struct {
 type ServiceConfig struct {
 	Host string `json:"host"`
 	Port string `json:"port"`
+}
+
+// JWTConfig JWT配置
+type JWTConfig struct {
+	Secret string `json:"secret"`
 }
 
 // LoadConfig 从Redis配置中心加载配置
@@ -68,6 +74,10 @@ func LoadConfig() *Config {
 
 // loadDefaultConfig 加载默认配置
 func loadDefaultConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "sta_go_jwt_secret"
+	}
 	// 检查环境变量
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
@@ -115,6 +125,9 @@ func loadDefaultConfig() *Config {
 				Host: shopHost,
 				Port: "8004",
 			},
+		},
+		JWT: JWTConfig{
+			Secret: jwtSecret,
 		},
 	}
 }
